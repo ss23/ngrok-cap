@@ -4,7 +4,6 @@ Ever heard of [ngrok](https://ngrok.com/)? Check out their website to learn what
 Installing it with `go get github.com/ss23/ngrok-cap` might work, but keep in mind you'll also need to get screenshotting working at some point.
 
 ## To do
-- [ ] Verify screenshots are actually taken
 - [ ] Store results of scans
 - [ ] Randomize the order that scans are done instead of starting at 0
 
