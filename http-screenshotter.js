@@ -48,6 +48,7 @@ const url = protocol + "//" + hostname + (port ? ":" + port : "");
       fs.copyFileSync(path.name, file);
       console.log(JSON.stringify({url: location.href, hash: hash, file: file}));
     } else {
+      console.log(location)
       browser.close()
       process.exit(1)
     }

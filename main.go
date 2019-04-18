@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os/exec"
 	"strings"
@@ -17,13 +19,24 @@ func main() {
 	workerThreads := 1 // ngrok bans at 5 threads or more it looks like
 	// ---
 
+	// Parse arguments
+	var start = flag.Int("start", 0, "Begin scanning from address 0")
+	var step = flag.Int("step", 1, "Step this much each time - used for distributed execution")
+	var randomize = flag.Bool("random", false, "Randomize the start step")
+	flag.Parse()
+
+	if *randomize {
+		rand.Seed(time.Now().UnixNano())
+		*start = rand.Int()
+	}
+
 	stats := Stats{Info: make(map[string]int)}
 
 	// Create a thread which displays output containing statistics about the run
 	go showStatus(&stats)
 
 	hosts := make(chan string)
-	go generateHosts(hosts)
+	go generateHosts(hosts, *start, *step)
 
 	validHosts := make(chan string)
 
@@ -49,11 +62,14 @@ func main() {
 
 }
 
-func generateHosts(hosts chan<- string) {
+func generateHosts(hosts chan<- string, start int, step int) {
 	// Create a list of every possible ngrok host
 	// TODO: Do not create this list sequentially, instead randomize it
-	for i := 0; i < (1 << 32); i += 1 {
-		host := fmt.Sprintf("%08x", i)
+	total := 1 << 32
+	lessTotal := total / step
+	for i := 0; i < lessTotal; i += step {
+		hostInt := (i + start) % total // Ensure we loop back around to the new/first ones
+		host := fmt.Sprintf("%08x", hostInt)
 		hosts <- host
 	}
 	fmt.Println("Host creation complete")
@@ -158,7 +174,7 @@ func showStatus(s *Stats) {
 	for {
 		data := s.Get()
 		newTotal := data["notfound"] + data["tunneldown"] + data["expired"] + data["valid"]
-		fmt.Printf("\r %04d | %04d | %04d | %04d | -- %dr/s --  ", data["notfound"], data["tunneldown"], data["expired"], data["valid"], newTotal-total)
+		fmt.Printf("\r %09d | %011d | %07d | %05d | -- %dr/s --  ", data["notfound"], data["tunneldown"], data["expired"], data["valid"], newTotal-total)
 		total = newTotal
 		// Only update once per second
 		time.Sleep(1 * time.Second)
