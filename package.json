@@ -1,0 +1,24 @@
+{
+  "name": "ngrok-cap",
+  "version": "1.0.0",
+  "description": "Capture screenshots from enumerated ngrok URLs",
+  "main": "http-screenshotter.js",
+  "dependencies": {
+    "js-sha256": "^0.9.0",
+    "puppeteer": "^1.14.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ss23/ngrok-cap.git"
+  },
+  "author": "ss23",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/ss23/ngrok-cap/issues"
+  },
+  "homepage": "https://github.com/ss23/ngrok-cap#readme"
+}

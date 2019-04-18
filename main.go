@@ -1,20 +1,20 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os/exec"
 	"strings"
 	"sync"
-	"os/exec"
 	"time"
-	"encoding/json"
 )
 
 func main() {
 	// User configurable options
 	// ---
-	workerThreads := 50
+	workerThreads := 1 // ngrok bans at 5 threads or more it looks like
 	// ---
 
 	stats := Stats{Info: make(map[string]int)}
@@ -67,9 +67,10 @@ func checkHosts(hosts <-chan string, validHosts chan<- string, wg *sync.WaitGrou
 		if err != nil {
 			panic(err)
 		}
-		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
 		bodyStr := string(body)
+		// We need to explicitly close the request body to prevent memory exhaustion
+		resp.Body.Close()
 		// Categorize it based on the response
 		if strings.HasPrefix(bodyStr, "Tunnel ") {
 			// This is the case of Tunnel [xxx].ngrok.io not found
@@ -131,7 +132,7 @@ func screenshotHosts(validHosts <-chan string) chan bool {
 
 // Object that tracks stats across the run
 type Stats struct {
-	mux sync.Mutex
+	mux  sync.Mutex
 	Info map[string]int
 }
 
@@ -157,9 +158,9 @@ func showStatus(s *Stats) {
 	for {
 		data := s.Get()
 		newTotal := data["notfound"] + data["tunneldown"] + data["expired"] + data["valid"]
-		fmt.Printf("\r %04d | %04d | %04d | %04d | -- %dr/s --  ", data["notfound"], data["tunneldown"], data["expired"], data["valid"], newTotal - total)
+		fmt.Printf("\r %04d | %04d | %04d | %04d | -- %dr/s --  ", data["notfound"], data["tunneldown"], data["expired"], data["valid"], newTotal-total)
 		total = newTotal
 		// Only update once per second
-		time.Sleep(1*time.Second)
+		time.Sleep(1 * time.Second)
 	}
 }
