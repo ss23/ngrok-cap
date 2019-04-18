@@ -116,7 +116,7 @@ func screenshotHosts(validHosts <-chan string) chan bool {
 			cmd := exec.Command("node",
 				"./http-screenshotter.js",
 				"/home/ubuntu/images/",
-				"http", validHost, "80",
+				"http", validHost + ".ngrok.io", "80",
 			)
 			timer := time.AfterFunc(30*time.Second, func() {
 				fmt.Println("Killing stalled Chrome screenshot")

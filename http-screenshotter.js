@@ -28,7 +28,7 @@ if (protocol.startsWith("ssl") || protocol.includes("https")) {
 const hostname = argv[2]
 const url = protocol + "//" + hostname + (port ? ":" + port : "");
 (async () => {
-  const browser = await puppeteer.launch({ignoreHTTPSErrors: true});
+  const browser = await puppeteer.launch({ignoreHTTPSErrors: true, headless: true});
   const page = await browser.newPage();
   try {
     await page.goto(url,{waitUntil: "networkidle0"});
