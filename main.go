@@ -14,21 +14,19 @@ import (
 )
 
 func main() {
-	// User configurable options
-	// ---
-	workerThreads := 1 // ngrok bans at 5 threads or more it looks like
-	// ---
-
 	// Parse arguments
 	var start = flag.Int("start", 0, "Begin scanning from address 0")
 	var step = flag.Int("step", 1, "Step this much each time - used for distributed execution")
 	var randomize = flag.Bool("random", false, "Randomize the start step")
+	var threads = flag.Int("threads", 1, "Processing threads")
 	flag.Parse()
 
 	if *randomize {
 		rand.Seed(time.Now().UnixNano())
 		*start = rand.Int()
 	}
+
+	fmt.Println("Beginning scan from ", *start)
 
 	stats := Stats{Info: make(map[string]int)}
 
@@ -43,8 +41,8 @@ func main() {
 	// WaitGroup for checkHosts workers (the only threaded component of the system)
 	var wg sync.WaitGroup
 
-	wg.Add(workerThreads)
-	for i := 0; i < workerThreads; i++ {
+	wg.Add(*threads)
+	for i := 0; i < *threads; i++ {
 		go checkHosts(hosts, validHosts, &wg, &stats)
 	}
 
