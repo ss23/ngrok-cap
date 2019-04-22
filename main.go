@@ -4,11 +4,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"os/exec"
-	"strings"
 	"sync"
 	"time"
 )
@@ -77,27 +75,26 @@ func generateHosts(hosts chan<- string, start int, step int) {
 func checkHosts(hosts <-chan string, validHosts chan<- string, wg *sync.WaitGroup, stats *Stats) {
 	for host := range hosts {
 		// Test if the ngrok.io URL returns the right response
-		resp, err := http.Get("http://" + host + ".ngrok.io/")
+		// Use HEAD requests to save bandwidth
+		resp, err := http.Head("http://" + host + ".ngrok.io/")
 		if err != nil {
 			panic(err)
 		}
-		body, err := ioutil.ReadAll(resp.Body)
-		bodyStr := string(body)
-		// We need to explicitly close the request body to prevent memory exhaustion
-		resp.Body.Close()
 		// Categorize it based on the response
-		if strings.HasPrefix(bodyStr, "Tunnel ") {
+		if resp.StatusCode == 404 && resp.ContentLength == 34 {
 			// This is the case of Tunnel [xxx].ngrok.io not found
 			stats.Increment("notfound")
-		} else if strings.Contains(bodyStr, "was successfully tunneled to your ngrok client,") {
+		} else if resp.StatusCode == 502 && resp.ContentLength == 1590 {
 			// This occurs when the ngrok client is running, but the port on the client end is not open
 			stats.Increment("tunneldown")
-		} else if strings.Contains(bodyStr, "This tunnel expired ") {
+		/* } else if strings.Contains(bodyStr, "This tunnel expired ") {
 			// Free tunnels cannot be up for a long period, else they expire
 			// This tunnel expired x days ago
 			stats.Increment("expired")
+			*/
 		} else {
 			fmt.Println("Found a host that was up!", host)
+			fmt.Println(resp.StatusCode, resp.ContentLength)
 			// Submit for a screenshot
 			validHosts <- host
 			stats.Increment("valid")
